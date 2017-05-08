@@ -1,0 +1,7 @@
+DEBUG = True
+
+SQLALCHEMY_DATABASE_URI = 'mysql://root:root@localhost/flask_demo'
+
+SECRET_KEY = 'SOPA_DE_CARACOL'
+
+SQLALCHEMY_TRACK_MODIFICATIONS = True
