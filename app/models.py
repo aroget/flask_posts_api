@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 class Account(db.Model):
     __tablename__ = 'accounts'
     id = db.Column(db.Integer, primary_key=True)
+    media = db.relationship('Image', backref='account', lazy='dynamic')
     owner = db.relationship('User', backref='account', lazy='dynamic')
     role = db.relationship('Role', backref='account', lazy='dynamic')
 
@@ -110,11 +111,42 @@ tags_posts = db.Table('tags_posts',
     db.Column('post_id', db.Integer, db.ForeignKey('posts.id'))
 )
 
+class Image(db.Model):
+    __tablename__ = 'images'
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(200))
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
+
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'url': self.url
+        }
+
+class Privilege(db.Model):
+    __tablename__= 'privileges'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), unique=True)
+    level = db.Column(db.Integer)
+    role = db.relationship('Role', uselist=False)
+
+
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'level': self.level
+        }
+
+
 
 class Role(db.Model):
     __tablename__= 'roles'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True)
+    privilege_id = db.Column(db.Integer, db.ForeignKey('privileges.id'))
     user = db.relationship('User', backref='role', lazy='dynamic')
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
 

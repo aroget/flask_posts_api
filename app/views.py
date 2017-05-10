@@ -2,23 +2,12 @@ import datetime
 
 from app import app, db
 from flask import jsonify, request, g
+from app.utils.media import upload_media
 from app.utils.auth import create_token
 from sqlalchemy.exc import IntegrityError
 from app.decorators import login_required
-from werkzeug.exceptions import BadRequest
-from app.models import Account, User, Post, Role, Tag, Token
-
-POST_TYPES = (
-    1, 'ALL', # all posts
-    2, 'PUBLISHED', # all published posts
-    3, 'DRAFTS', # all drafts posts
-    4, 'ARCHIVED', # all archived posts
-)
-
-@app.route('/')
-@login_required
-def hello_world():
-    return 'Hello, World!'
+from werkzeug.exceptions import BadRequest, Forbidden
+from app.models import Account, User, Post, Role, Tag, Token, Image, Privilege
 
 
 @app.route('/login', methods=['POST'])
@@ -52,6 +41,7 @@ def login():
 
 
 @app.route('/register', methods=['POST'])
+@login_required
 def register():
     try:
         first_name = request.json['first_name']
@@ -72,7 +62,10 @@ def register():
     db.session.add(account)
     db.session.commit()
 
-    admin_role = Role(name='Admin', account_id=account.id)
+    privilege = Privilege.query.filter_by(level=1)
+
+    admin_role = Role(name='Admin', account_id=account.id,
+                      privilege_id=privilege.id)
 
     db.session.add(admin_role)
 
@@ -80,8 +73,6 @@ def register():
         db.session.commit()
     except IntegrityError:
         raise BadRequest('Duplicate Entry')
-
-
 
     user.account_id = account.id
     user.role_id = admin_role.id
@@ -96,37 +87,96 @@ def register():
 @app.route('/profile', methods=['GET', 'PUT'])
 @login_required
 def profile():
+    if request.method == 'PUT':
+        user = User.query.get(g.user_id)
+
+        first_name = user.first_name
+        last_name = user.last_name
+        avatar = user.avatar
+
+        if 'first_name' in request.json:
+            first_name = request.json['first_name']
+
+        if 'last_name' in request.json:
+            last_name = request.json['last_name']
+
+        if 'avatar' in request.json:
+            avatar = request.json['avatar']
+
+        user.first_name = first_name
+        user.last_name = last_name
+        user.avatar = avatar
+
+        db.session.commit()
+
+        return jsonify({'response': user.serialize})
+
     user_id = g.user_id
     user = User.query.get(user_id)
     return jsonify(user.serialize)
 
 
 @app.route('/user/<int:user_id>/posts', methods=['GET'])
+@login_required
 def posts_by_user(user_id):
     posts = Post.query.filter_by(author=user_id)
     return jsonify({'response': [post.serialize for post in posts]})
 
 
 @app.route('/roles', methods=['GET', 'POST'])
+@login_required
 def roles():
     if request.method == 'POST':
-        return jsonify({'POST'})
+        try:
+            name = request.json['name']
+            privilege_id = request.json['privilege_id']
+        except KeyError as missing_key:
+            raise BadRequest('%s is required' % missing_key)
 
-    roles = Role.query.all()
+        user = User.query.get(g.user_id)
+
+        role = Role(name=name, privilege_id=privilege_id, account_id=user.account_id)
+
+        db.session.add(role)
+        db.session.commit()
+
+        return jsonify({'response': role.serialize})
+    user = g.user_id
+    roles = Role.query.filter_by(account_id=user.account_id)
     return jsonify({'response': [role.serialize for role in roles]})
 
 
 @app.route('/role/<int:role_id>', methods=['GET', 'PUT'])
+@login_required
 def role_details(role_id):
+    user = User.query.get(g.user_id)
     role = Role.query.get_or_404(role_id)
 
+    if role.account_id is not user.account_id:
+        raise Forbidden()
+
     if request.method == 'PUT':
-        return jsonify({'PUT'})
+        name = role.name
+        privilege_id = role.privilege_id
+
+        if 'name' in request.json:
+            name = request.json['name']
+
+        if 'privilege_id' in request.json:
+            privilege_id = request.json['privilege_id']
+
+        role.name = name
+        role.privilege_id = privilege_id
+
+        db.session.commit()
+
+        return jsonify({'response': role.serialize})
 
     return jsonify({'response': role.serialize})
 
 
 @app.route('/tags', methods=['GET', 'POST'])
+@login_required
 def tags():
     if request.method == 'POST':
         if 'name' not in request.json:
@@ -143,13 +193,25 @@ def tags():
 
 
 @app.route('/tag/<int:tag_id>', methods=['GET', 'PUT'])
+@login_required
 def tag_details(tag_id):
     tag = Tag.query.get_or_404(tag_id)
+
+    if request.method == 'PUT':
+        if 'name' not in request.json:
+            raise BadRequest()
+
+        tag.name = request.json['name']
+
+        db.session.commit()
+
+        return jsonify({'response': tag.serialize})
 
     return jsonify({'response': tag.serialize})
 
 
 @app.route('/tag/<int:tag_id>/posts', methods=['GET'])
+@login_required
 def posts_by_tag(tag_id):
     tag = Tag.query.get_or_404(tag_id)
 
@@ -191,7 +253,7 @@ def posts():
 
         if 'is_published' in request.json:
             is_published = True
-            published_date = datetime.datetime.now()
+            published_date = datetime.datetime.utcnow()
 
 
         post = Post(title=title, body=body)
@@ -219,8 +281,10 @@ def posts():
 
 
 @app.route('/post/<int:post_id>', methods=['GET', 'PUT'])
+@login_required
 def post_details(post_id):
     post = Post.query.get_or_404(post_id)
+
     if request.method == 'PUT':
         if 'title' not in request.json or 'body' not in request.json:
             raise BadRequest('Title and/or Body missing')
@@ -236,7 +300,7 @@ def post_details(post_id):
 
         if 'is_published' in request.json:
             is_published = True
-            published_date = datetime.datetime.now()
+            published_date = datetime.datetime.utcnow()
 
         if 'tags' in request.json:
             post.tags = tags
@@ -251,7 +315,7 @@ def post_details(post_id):
             post.is_published = is_published
 
         if post.is_published:
-            post.published_date = datetime.datetime.now()
+            post.published_date = datetime.datetime.utcnow()
 
         db.session.commit()
         return jsonify({'response': post.serialize}), 202
@@ -260,9 +324,36 @@ def post_details(post_id):
 
 
 @app.route('/post/<int:post_id>/delete', methods=['DELETE'])
+@login_required
 def post_delete(post_id):
     post = Post.query.get_or_404(post_id)
     db.session.delete(post)
     db.session.commit()
 
     return jsonify(), 204
+
+
+@app.route('/media', methods=['GET', 'POST'])
+@login_required
+def media():
+    if request.method == 'POST':
+        user_id = g.user_id
+        user = User.query.get(user_id)
+
+        response = upload_media(request.files['file'])
+        image = Image(url=response, account_id=user.account_id)
+
+        db.session.add(image)
+        db.session.commit()
+
+        return jsonify({'response': response})
+
+    user_id = g.user_id
+    user = User.query.get(user_id)
+
+    images = Image.query.filter_by(account_id=user.account)
+
+    return jsonify({'response', [image for image in images]})
+
+
+
