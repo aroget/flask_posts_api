@@ -9,7 +9,7 @@ class Config(object):
 
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = "mysql://bd890f399d8ceb:bea739ec@us-cdbr-iron-east-03.cleardb.net/heroku_3fe77ae70ca22b5"
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
 
 class DevelopmentConfig(Config):
     DEBUG = True
