@@ -9,7 +9,8 @@ app = Flask(__name__)
 if os.environ.get('HEROKU_ENV') is not None:
     app.config.from_object(config.ProductionConfig)
 
-app.config.from_object(config.DevelopmentConfig)
+if os.environ.get('HEROKU_ENV') is None:
+    app.config.from_object(config.DevelopmentConfig)
 
 db = SQLAlchemy(app)
 
