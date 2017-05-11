@@ -6,7 +6,7 @@ from app import config
 
 app = Flask(__name__)
 
-if os.getenv('HEROKU_ENV') is not None:
+if os.environ.get('HEROKU_ENV') is not None:
     app.config.from_object(config.ProductionConfig)
 
 app.config.from_object(config.DevelopmentConfig)
@@ -18,6 +18,8 @@ from app import views, models
 
 
 if __name__ == "__main__":
+    print('loading')
+    print(os.environ.get('DATABASE_URL'))
     port = int(os.environ.get('PORT', 5000))
 
     db.create_all()
