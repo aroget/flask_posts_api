@@ -1,16 +1,17 @@
 import os
 
-DEBUG = True
-
-SQLALCHEMY_DATABASE_URI = 'mysql://bd890f399d8ceb:bea739ec@us-cdbr-iron-east-03.cleardb.net/heroku_3fe77ae70ca22b5'
-
-if os.environ.get('HEROKU_ENV') is None:
+class Config(object):
     DEBUG = False
+
+    SECRET_KEY = 'SOPA_DE_CARACOL'
+
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+
     SQLALCHEMY_DATABASE_URI = 'mysql://root:root@localhost/flask_demo'
 
 
+class ProductionConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
 
-
-SECRET_KEY = 'SOPA_DE_CARACOL'
-
-SQLALCHEMY_TRACK_MODIFICATIONS = True
+class DevelopmentConfig(Config):
+    DEBUG = True

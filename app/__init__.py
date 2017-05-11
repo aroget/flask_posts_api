@@ -5,17 +5,20 @@ from flask_sqlalchemy import SQLAlchemy
 from app import config
 
 app = Flask(__name__)
-app.config.from_object(config)
+
+if os.getenv('HEROKU_ENV') is not None:
+    app.config.from_object(config.ProductionConfig)
+
+app.config.from_object(config.DevelopmentConfig)
 
 db = SQLAlchemy(app)
 
 
 from app import views, models
-from app.utils.seed import seed_privilege
+
 
 if __name__ == "__main__":
     port = int(os.environ.get('PORT', 5000))
 
     db.create_all()
-    seed_privilege()
     app.run(host='0.0.0.0', port=port)

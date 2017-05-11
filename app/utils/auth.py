@@ -13,10 +13,10 @@ def create_token(user):
         'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
     }
 
-    token = jwt.encode(payload, config.SECRET_KEY, algorithm='HS256')
+    token = jwt.encode(payload, config.Config.SECRET_KEY, algorithm='HS256')
     return token.decode('unicode_escape')
 
 
 def parse_token(req):
     token = req.headers.get('Authorization').split()[1]
-    return jwt.decode(token, config.SECRET_KEY, algorithms='HS256')
+    return jwt.decode(token, config.Config.SECRET_KEY, algorithms='HS256')
