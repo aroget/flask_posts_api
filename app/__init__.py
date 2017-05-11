@@ -18,8 +18,6 @@ from app import views, models
 
 
 if __name__ == "__main__":
-    print('loading')
-    print(os.environ.get('DATABASE_URL'))
     port = int(os.environ.get('PORT', 5000))
 
     db.create_all()
