@@ -141,7 +141,7 @@ def roles():
         db.session.commit()
 
         return jsonify({'response': role.serialize})
-    user = g.user_id
+    user = User.query.get(g.user_id)
     roles = Role.query.filter_by(account_id=user.account_id)
     return jsonify({'response': [role.serialize for role in roles]})
 
