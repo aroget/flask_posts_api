@@ -1,10 +1,12 @@
 import os
 from flask import Flask
+from flask_cors import CORS, cross_origin
 from flask_sqlalchemy import SQLAlchemy
 
 from app import config
 
 app = Flask(__name__)
+CORS(app)
 
 if os.environ.get('HEROKU_ENV') is not None:
     app.config.from_object(config.ProductionConfig)
