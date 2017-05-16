@@ -121,7 +121,8 @@ class Image(db.Model):
     def serialize(self):
         return {
             'id': self.id,
-            'url': self.url
+            'url': self.url,
+            'account_id': self.account_id
         }
 
 class Privilege(db.Model):

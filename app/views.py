@@ -132,8 +132,8 @@ def roles():
             privilege_id = request.json['privilege_id']
         except KeyError as missing_key:
             raise BadRequest('%s is required' % missing_key)
-
         user = User.query.get(g.user_id)
+
 
         role = Role(name=name, privilege_id=privilege_id, account_id=user.account_id)
 
@@ -351,9 +351,9 @@ def media():
     user_id = g.user_id
     user = User.query.get(user_id)
 
-    images = Image.query.filter_by(account_id=user.account)
+    images = Image.query.filter_by(account_id=user.account_id)
 
-    return jsonify({'response', [image for image in images]})
+    return jsonify({'response': [image.serialize for image in images]})
 
 
 
