@@ -350,7 +350,7 @@ def media():
         db.session.add(image)
         db.session.commit()
 
-        return jsonify({'response': response})
+        return jsonify({'response': image.serialize})
 
     user_id = g.user_id
     user = User.query.get(user_id)
@@ -358,6 +358,16 @@ def media():
     images = Image.query.filter_by(account_id=user.account_id)
 
     return jsonify({'response': [image.serialize for image in images]})
+
+
+@app.route('/media/<int:image_id>/delete', methods=['DELETE'])
+@login_required
+def delete_image(image_id):
+    image = Image.query.get_or_404(image_id)
+    db.session.delete(image)
+    db.session.commit()
+
+    return jsonify(), 204
 
 
 
