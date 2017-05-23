@@ -79,13 +79,13 @@ class Post(db.Model):
         return {
             'id': self.id,
             'title': self.title,
-            'author': self.author,
+            'author': User.query.get(self.author).serialize,
             'is_archived': self.is_archived,
             'is_published': self.is_published,
             'published_date': self.published_date,
             'body': self.body,
             'hero_image': self.hero_image,
-            'tags': self.tags
+            'tags': [tag.serialize for tag in self.tags]
         }
 
 

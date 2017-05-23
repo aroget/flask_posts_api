@@ -232,7 +232,7 @@ def tag_delete(tag_id):
 @login_required
 def posts():
     if request.method == 'POST':
-        tags = []
+        post_tags = []
         hero_image = None
         is_archived = False
         is_published = False
@@ -246,7 +246,9 @@ def posts():
 
 
         if 'tags' in request.json:
+            print(request.json['tags'])
             post_tags = [Tag.query.get_or_404(tag_id) for tag_id in request.json['tags']]
+            print(post_tags)
 
         if 'hero_image' in request.json:
             hero_image = hero_image
@@ -258,12 +260,14 @@ def posts():
 
         post = Post(title=title, body=body)
 
-        post.tags = tags
+        post.tags = post_tags
         post.author = g.user_id
         post.hero_image = hero_image
         post.is_archived = is_archived
         post.is_published = is_published
         post.published_date = published_date
+
+        print(post.tags)
 
         db.session.add(post)
         db.session.commit()
