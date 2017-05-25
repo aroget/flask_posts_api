@@ -62,17 +62,18 @@ def register():
     db.session.add(account)
     db.session.commit()
 
-    privilege = Privilege.query.filter_by(level=1)
+    privilege = Privilege.query.filter_by(level=1).first()
 
     admin_role = Role(name='Admin', account_id=account.id,
                       privilege_id=privilege.id)
 
     db.session.add(admin_role)
+    db.session.commit()
 
-    try:
-        db.session.commit()
-    except IntegrityError:
-        raise BadRequest('Duplicate Entry')
+    # try:
+    #     db.session.commit()
+    # except IntegrityError:
+    #     raise BadRequest('Duplicate Entry')
 
     user.account_id = account.id
     user.role_id = admin_role.id

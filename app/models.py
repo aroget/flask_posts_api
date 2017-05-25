@@ -128,7 +128,7 @@ class Image(db.Model):
 class Privilege(db.Model):
     __tablename__= 'privileges'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True)
+    name = db.Column(db.String(100))
     level = db.Column(db.Integer)
     role = db.relationship('Role', uselist=False)
 
@@ -146,7 +146,7 @@ class Privilege(db.Model):
 class Role(db.Model):
     __tablename__= 'roles'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True)
+    name = db.Column(db.String(100))
     privilege_id = db.Column(db.Integer, db.ForeignKey('privileges.id'))
     user = db.relationship('User', backref='role', lazy='dynamic')
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'))
